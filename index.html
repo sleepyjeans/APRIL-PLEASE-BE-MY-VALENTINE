@@ -9,14 +9,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       height: 100vh;
-      background: #ffd6e8; /* soft pink */
+      background: linear-gradient(to bottom, #ffd6e8, #ffb6d5);
       font-family: 'Press Start 2P', cursive;
       display: flex;
       justify-content: center;
@@ -24,7 +22,6 @@
       overflow: hidden;
     }
 
-    /* Floating pixel hearts background */
     .heart {
       position: absolute;
       width: 16px;
@@ -32,7 +29,7 @@
       background: #ff4d88;
       image-rendering: pixelated;
       transform: rotate(45deg);
-      animation: float 8s linear infinite;
+      animation: float 8s linear infinite, pulse 2s ease-in-out infinite;
       opacity: 0.6;
     }
 
@@ -43,50 +40,28 @@
       width: 16px;
       height: 16px;
       background: #ff4d88;
-      border-radius: 0;
     }
 
-    .heart::before {
-      top: -8px;
-      left: 0;
-    }
-
-    .heart::after {
-      left: -8px;
-      top: 0;
-    }
+    .heart::before { top: -8px; left: 0; }
+    .heart::after { left: -8px; top: 0; }
 
     @keyframes float {
-      from {
-        transform: translateY(100vh) rotate(45deg);
-      }
-      to {
-        transform: translateY(-20vh) rotate(45deg);
-      }
+      from { transform: translateY(100vh) rotate(45deg); }
+      to { transform: translateY(-20vh) rotate(45deg); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1) rotate(45deg); }
+      50% { transform: scale(1.15) rotate(45deg); }
     }
 
     @keyframes bounceIn {
-      0% {
-        transform: scale(0.2);
-        opacity: 0;
-      }
-      60% {
-        transform: scale(1.1);
-        opacity: 1;
-      }
-      80% {
-        transform: scale(0.95);
-      }
-      100% {
-        transform: scale(1);
-      }
-    }
-      to {
-        transform: translateY(-20vh) rotate(45deg);
-      }
+      0% { transform: scale(0.2); opacity: 0; }
+      60% { transform: scale(1.1); opacity: 1; }
+      80% { transform: scale(0.95); }
+      100% { transform: scale(1); }
     }
 
-    /* Popup */
     .popup {
       background: #fff0f7;
       border: 4px solid #ff4d88;
@@ -95,12 +70,19 @@
       z-index: 10;
       box-shadow: 8px 8px 0 #ff9bbf;
       animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
     }
 
     .popup h1 {
       font-size: 14px;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       color: #ff2f77;
+    }
+
+    .subtext {
+      font-size: 8px;
+      margin-bottom: 20px;
+      color: #c2185b;
     }
 
     .buttons {
@@ -120,37 +102,50 @@
       box-shadow: 4px 4px 0 #ff9bbf;
     }
 
-    button:hover {
-      background: #ff2f77;
+    button:hover { background: #ff2f77; }
+
+    .sticker {
+      position: absolute;
+      top: -14px;
+      right: -14px;
+      font-size: 22px;
+      transform: rotate(-20deg);
     }
 
+    .music-toggle {
+      position: fixed;
+      bottom: 12px;
+      right: 12px;
+      font-size: 8px;
+      background: #fff0f7;
+      border: 3px solid #ff4d88;
+      padding: 8px 10px;
+      cursor: pointer;
+      box-shadow: 4px 4px 0 #ff9bbf;
+      z-index: 20;
+    }
   </style>
 </head>
 <body>
 
   <!-- Hearts -->
   <script>
-    // pixel click sound (retro beep)
+    // pixel click sound
     function playPixelSound() {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-
       osc.type = 'square';
       osc.frequency.value = 880;
-
       gain.gain.setValueAtTime(0.1, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-
       osc.connect(gain);
       gain.connect(ctx.destination);
-
       osc.start();
       osc.stop(ctx.currentTime + 0.15);
     }
 
     // floating hearts
-
     for (let i = 0; i < 25; i++) {
       const heart = document.createElement('div');
       heart.className = 'heart';
@@ -159,16 +154,57 @@
       heart.style.animationDelay = Math.random() * 5 + 's';
       document.body.appendChild(heart);
     }
+
+    // heart explosion
+    function explodeHearts() {
+      for (let i = 0; i < 20; i++) {
+        const h = document.createElement('div');
+        h.className = 'heart';
+        h.style.left = '50vw';
+        h.style.top = '50vh';
+        h.style.animation = 'none';
+        document.body.appendChild(h);
+
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = Math.random() * 200 + 50;
+
+        h.animate([
+          { transform: 'translate(0,0) scale(1)' },
+          { transform: `translate(${Math.cos(angle)*distance}px, ${Math.sin(angle)*distance}px) scale(0)` }
+        ], { duration: 800, easing: 'ease-out' });
+
+        setTimeout(() => h.remove(), 800);
+      }
+    }
+
+    // music toggle
+    const music = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_7c91e3cfd2.mp3');
+    music.loop = true;
+    let musicOn = false;
+
+    function toggleMusic(btn) {
+      if (!musicOn) {
+        music.play();
+        btn.innerText = 'music: on';
+      } else {
+        music.pause();
+        btn.innerText = 'music: off';
+      }
+      musicOn = !musicOn;
+    }
   </script>
 
   <!-- Popup -->
   <div class="popup">
+    <div class="sticker">➵</div>
     <h1>do you want to be my valentine?</h1>
+    <p class="subtext">this is not optional.</p>
     <div class="buttons">
-      <button onclick="playPixelSound(); alert('YAY 💗 you are mine now')">yes</button>
-      <button onclick="playPixelSound(); alert('correct 💞 no escape')">yes</button>
+      <button onclick="playPixelSound(); explodeHearts(); alert('VALENTINE ACCEPTED 💗 no refunds')">yes</button>
+      <button onclick="playPixelSound(); explodeHearts(); alert('correct 💞 destiny locked in')">yes</button>
     </div>
   </div>
 
+  <button class="music-toggle" onclick="toggleMusic(this)">music: off</button>
 </body>
 </html>
